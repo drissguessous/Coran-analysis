@@ -138,6 +138,7 @@ textarea{width:100%;font:inherit;font-size:16px;border:1px solid var(--line);bor
 .basmala{font-family:var(--f-q);font-size:calc(var(--ar-size)*1.05);text-align:center;margin:8px 0 14px;direction:rtl}
 .rtools{position:sticky;top:calc(var(--top-h) + env(safe-area-inset-top));z-index:5;background:var(--paper);padding:8px 0;display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);margin:0 -2px 6px}
 .rtools::-webkit-scrollbar{display:none}
+.rtools .btn{white-space:nowrap;flex:none}
 .verse{padding:12px 2px 10px;border-bottom:1px solid var(--line);scroll-margin-top:120px}
 .verse.hi{background:var(--soft);border-radius:10px;padding-inline:10px}
 .verse .vt{font-family:var(--f-q);direction:rtl;text-align:right;font-size:var(--ar-size);line-height:2.3}
@@ -204,3 +205,25 @@ ol.logic li{margin:4px 0}
 .toast.on{opacity:1}
 .empty{color:var(--muted);text-align:center;padding:30px 10px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ── Lecteur audio */
+.player{position:fixed;inset:auto 0 calc(var(--bar-h) + env(safe-area-inset-bottom)) 0;z-index:19;background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.08);padding:8px max(12px,env(safe-area-inset-right)) 8px max(12px,env(safe-area-inset-left))}
+@media (min-width:900px){.player{inset:auto 0 0 232px}}
+.pl-top{display:flex;align-items:center;gap:6px}
+.pl-rec{flex:1;min-width:0;display:flex;gap:8px;align-items:center;border:0;background:none;text-align:start;padding:2px 0;color:var(--ink)}
+.pl-rec span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-ctl{display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding-top:4px}
+.pl-ctl::-webkit-scrollbar{display:none}
+.pl-play{width:48px;height:48px;border-radius:50%;border:0;background:var(--lapis);color:var(--lapis-ink);display:grid;place-items:center;flex:none}
+.pl-play svg{stroke:currentColor}
+.pl-wait{font-size:.85rem;color:var(--gold);font-weight:600;padding:2px 0}
+body.has-player main{padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom) + 160px)}
+body.has-player .toast{bottom:calc(var(--bar-h) + env(safe-area-inset-bottom) + 150px)}
+.verse.playing{background:var(--soft);background:color-mix(in srgb,var(--gold) 14%,transparent);border-radius:10px;padding-inline:10px}
+/* ── Arbre généalogique */
+.gen{overflow:auto;-webkit-overflow-scrolling:touch;height:62vh;height:62dvh;border:1px solid var(--line);border-radius:14px;background:var(--paper);touch-action:pan-x pan-y;margin-top:8px}
+.gen svg{display:block}
+.genbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.genlegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;margin-top:10px;color:var(--muted)}
+.genlegend span{display:inline-flex;gap:6px;align-items:center}
+@media (min-width:900px){.gen{height:70vh}}

@@ -18,6 +18,8 @@ from data_lex import LEX                          # noqa: E402
 from data_family import KIND, KINDS, LINEAGES, LINEAGE_INTRO          # noqa: E402
 from data_tadabbur import METHOD, OBSTACLE, CALLS, APPLY, TQ, TQ_ROOT  # noqa: E402
 import data_tajwid as TJ                          # noqa: E402
+import data_genealogy as GEN                      # noqa: E402
+import data_audio as AUD                          # noqa: E402
 
 VERSES = sorted(V.items())
 
@@ -109,6 +111,7 @@ def tajwid():
         'cas': ['Saktah, imāla, ishmām, prosternations.', 'السكت والإمالة والإشمام والسجدات.'],
         'makharij': ["D'où sort chaque lettre, et les lettres emphatiques.", 'مخارج الحروف والتفخيم.'],
         'adab': ['Ce que le texte dit lui-même de sa récitation.', 'ما يقوله النص عن تلاوته.'],
+        'qiraat': ['Les lectures les plus pratiquées, à écouter et comparer.', 'القراءات الأكثر انتشارًا للاستماع والمقارنة.'],
     }
     stoprules = [
         ["À l'arrêt, la dernière voyelle devient un sukūn.", 'يُسكَّن الحرف الأخير عند الوقف.'],
@@ -120,6 +123,19 @@ def tajwid():
     return dict(rules=rules, special=special, waqf=waqf, makharij=TJ.MAKHARIJ, tafkhim=TJ.TAFKHIM,
                 adab=[list(a) for a in TJ.ADAB], signs=signs, legend=legend, secdesc=secdesc, stoprules=stoprules,
                 demo=[f'{demo_ref[0]}:{demo_ref[1]}', V[demo_ref]])
+
+
+def genealogy():
+    ids = {n[0] for n in GEN.NODES}
+    for e in GEN.EDGES:
+        assert e[0] in ids and e[1] in ids, e
+        assert norm(e[6]) in ' '.join(N[x] for x in rng(e[5])), e
+    for n in GEN.NODES:
+        if n[6]:
+            assert norm(n[7]) in ' '.join(N[x] for x in rng(n[6])), n
+    return dict(note=list(GEN.GENEALOGY_NOTE),
+                nodes=[dict(id=n[0], fr=n[1], ar=n[2], kind=n[3], col=n[4], row=n[5], ref=n[6], kw=n[7]) for n in GEN.NODES],
+                edges=[dict(**{'from': e[0]}, to=e[1], type=e[2], fr=e[3], ar=e[4], ref=e[5], kw=e[6]) for e in GEN.EDGES])
 
 
 def collect_refs():
@@ -139,6 +155,7 @@ def collect_refs():
         refs += [r for r, _ in m[5]]
     refs += [o[0] for o in OBSTACLE]
     refs += [a[0] for a in TJ.ADAB]
+    refs += [n[6] for n in GEN.NODES if n[6]] + [e[5] for e in GEN.EDGES]
     return {k for r in refs for k in rng(r)}
 
 
@@ -155,6 +172,10 @@ def main():
         apply=APPLY, tq=TQ, tqr=TQ_ROOT,
         calls=[[c[0], c[1], c[2], c[3], c[4], [f'{a}:{b}' for (a, b), v in sorted(N.items()) if re.search(c[5], v)]] for c in CALLS],
         tj=tajwid(),
+        gen=genealogy(),
+        audio=dict(intro=list(AUD.QIRAAT_INTRO),
+                   reciters=[dict(id=r[0], riw=r[1], fr=r[2], ar=r[3], style=r[4], dir=r[5], learn=r[6], note=r[7]) for r in AUD.RECITERS],
+                   riwayat=[dict(id=w[0], fr=w[1], ar=w[2], city=w[3], dfr=w[4], dar=w[5], traits=w[6]) for w in AUD.RIWAYAT]),
         verses={f'{s}:{a}': V[(s, a)] for s, a in sorted(cited)},
         suras=[[c['id'], c['name'], c['transliteration'], c['type'], c['total_verses']] for c in D],
     )
@@ -163,7 +184,7 @@ def main():
     icon = 'data:image/png;base64,' + base64.b64encode(open(os.path.join(src, 'icon.png'), 'rb').read()).decode()
     font = 'data:font/woff2;base64,' + base64.b64encode(open(os.path.join(src, 'amiri-quran-arabic-400-normal.woff2'), 'rb').read()).decode()
     css = open(os.path.join(src, 'app.css')).read().replace('/*QFONT*/', font)
-    app = open(os.path.join(src, 'app.js')).read()
+    app = '\n'.join(open(os.path.join(src, f)).read() for f in ('app.js', 'audio.js', 'genealogy.js')) + '\nstart();\n'
     shell = open(os.path.join(src, 'index.html')).read()
     page = shell.replace('/*ICON*/', icon).replace('/*CSS*/', css).replace('/*DATA*/null', js).replace('/*JS*/', app)
     full = [[c['id'], v['id'], v['text']] for c in D for v in c['verses']]

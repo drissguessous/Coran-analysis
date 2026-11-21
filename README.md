@@ -26,22 +26,25 @@ Chaque mise à jour de `main` produit une nouvelle version, qui s'installe par-d
 - **Règles** : signes du muṣḥaf, nūn et tanwīn, mīm, ghunna et qalqala, article, madd, lettres muettes, pauses (waqf), cas particuliers (saktah, imāla, ishmām, prosternations), points d'articulation, et ce que le texte dit de sa récitation. Chaque règle donne son nombre d'occurrences et des exemples détectés automatiquement.
 - **Questions** : 30 questions avec un raisonnement pas à pas.
 - **Tadabbur** : la méthode du texte (lire, comprendre, relier, appliquer) et ses appels à réfléchir.
-- **Personnages**, **Lignées**, **Lexique des racines**, **Favoris**, **Recherche** globale (français et arabe).
+- **Écoute et apprentissage** : récitation en Ḥafṣ verset par verset, synchronisée avec le texte (al-Ḥuṣarī version d'enseignement, al-Ḥuṣarī, Ayman Suwayd, al-Minshāwī, ʿAbd al-Bāsiṭ, al-Ḥudhayfī, al-ʿAfāsī), avec répétition ×1/×3/×5/∞, pause pour répéter soi-même et vitesse réglable. Autres lectures par sourate entière : Warsh ʿan Nāfiʿ (dont al-Qazabrī, Benkirane, al-Kūshī), Qālūn ʿan Nāfiʿ, ad-Dūrī ʿan Abī ʿAmr, Shuʿba ʿan ʿĀṣim. Chaque exemple de règle de tajwīd s'écoute.
+- **Arbre généalogique** : 45 prophètes, personnages et peuples, reliés par 45 liens, chacun justifié par un verset (filiation explicite, descendance, conjoint, fratrie, lien de foi ou de tutelle, « leur frère »).
+- **Personnages**, **Lexique des racines**, **Favoris**, **Recherche** globale (français et arabe).
 
 ## Méthode
 
 - **Source unique** : le texte arabe ʿuthmānī du muṣḥaf de Médine (lecture de Ḥafṣ), issu de l'Encyclopédie du Noble Coran via le paquet [`quran-json`](https://github.com/risan/quran-json) (CC BY 4.0). Aucun tafsīr ni aucune traduction existante n'a servi à construire l'arbre.
 - **Contrôle** : chaque référence porte un mot-clé arabe qui doit se trouver dans le verset cité (`npm run verify`).
 - **Règles de lecture** : celles de la lecture de Ḥafṣ ʿan ʿĀṣim. Le muṣḥaf les note par ses signes (sukūn, tanwīn superposé ou décalé, petit mīm, madda…), et les détecteurs de `data/data_tajwid.py` les retrouvent dans le texte. La coloration est une aide et ne remplace pas l'écoute d'un récitateur.
+- **Audio** : les récitations sont diffusées depuis everyayah.com (Ḥafṣ, verset par verset) et mp3quran.net (autres lectures, par sourate) ; elles appartiennent à leurs récitants et producteurs, et aucun fichier audio n'est inclus. Les autres lectures ont une numérotation des versets différente de Ḥafṣ : elles se jouent donc par sourate entière, et le texte affiché reste celui de Ḥafṣ.
 - Les lectures proposées sont à discuter : ce ne sont pas des avis religieux.
 
 ## Structure
 
 ```
-data/                 Données (Python) : arbre, personnages, questions, lexique, tadabbur, tajwīd, contrôles
+data/                 Données (Python) : arbre, personnages, généalogie, questions, lexique, tadabbur, tajwīd, audio, contrôles
 scripts/build.py      Construit web/dist et web/standalone
 scripts/verify_all.py Vérifie toutes les références
-web/src/              Interface : index.html, app.css, app.js, police coranique, icône
+web/src/              Interface : index.html, app.css, app.js, audio.js, genealogy.js, police coranique, icône
 android/              Projet Android (Capacitor)
 .github/workflows/    Compilation de l'APK et publication à chaque push sur main
 ```

@@ -163,6 +163,7 @@ function vcard(o) {
      <button class="btn" data-a="ctx" data-c="${id}" aria-expanded="false">${esc(L(['Contexte','السياق']))}</button>
      ${o.kw ? `<button class="btn" data-a="word" data-c="${id}" aria-expanded="false">${esc(L(['Le mot ailleurs','اللفظ في القرآن']))}</button>` : ''}
      <button class="btn" data-a="med" data-c="${id}" aria-expanded="false">${esc(L(['Méditer','تدبّر']))}</button>
+     <button class="btn" data-play="${first}" data-single="1">▶ ${esc(L(['Écouter','استمع']))}</button>
      <a class="btn" href="#${readHash(o.ref)}">${ico('book', 'sm')}${esc(L(['Lire','اقرأ']))}</a>
      <button class="btn star" data-a="fav" data-ref="${first}" aria-pressed="${FAVS.has(first)}" aria-label="${esc(L(['Favori','مفضلة']))}">${ico('star', 'sm')}</button>
    </div><div class="out"></div></article>`;
@@ -235,7 +236,7 @@ window.addEventListener('hashchange', () => { let h = ''; try { h = decodeURICom
 
 /* ───────────────────────── Coquille */
 const NAVITEMS = [['accueil','home',['Accueil','الرئيسية']],['lire','book',['Lire','اقرأ']],['sujets','tree',['Sujets','الموضوعات']],['regles','rules',['Règles','التجويد']],['plus','more',['Plus','المزيد']]];
-const RAIL = [...NAVITEMS.slice(0, 4), null, ['questions','q',['Questions','أسئلة']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Lignées','السلالات']],['lexique','lex',['Lexique','المعجم']],['nature','layers',['Natures','الأنواع']],['favoris','heart',['Favoris','المفضلة']], null, ['reglages','settings',['Réglages','الإعدادات']],['methode','info',['Méthode','المنهج']]];
+const RAIL = [...NAVITEMS.slice(0, 4), null, ['questions','q',['Questions','أسئلة']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Généalogie','الأنساب']],['lexique','lex',['Lexique','المعجم']],['nature','layers',['Natures','الأنواع']],['favoris','heart',['Favoris','المفضلة']], null, ['reglages','settings',['Réglages','الإعدادات']],['methode','info',['Méthode','المنهج']]];
 function shell(title) {
   document.getElementById('ttl').innerHTML = title;
   const canBack = STACK.length > 1 || !TABS.includes(CUR);
@@ -257,20 +258,21 @@ async function render(h, y = 0) {
     else if (h.startsWith('lire-')) { const [, s, a] = h.split('-'); v = await viewSura(+s, a ? +a : 0); }
     else if (h.startsWith('regles-')) v = viewRules(h.slice(7));
     else if (h.startsWith('nature')) v = viewNature((h.split('-')[1] || 'E').toUpperCase());
-    else v = ({ accueil: viewHome, lire: viewReadIndex, sujets: viewTopics, regles: () => viewRules(''), plus: viewMore, questions: () => viewQuestions(), tadabbur: viewTadabbur, personnages: () => viewPeople(), lignees: viewLineages, lexique: viewLex, favoris: viewFavs, reglages: viewSettings, methode: viewMethod, recherche: viewSearch }[h] || viewHome)();
+    else v = ({ accueil: viewHome, lire: viewReadIndex, sujets: viewTopics, regles: () => viewRules(''), plus: viewMore, questions: () => viewQuestions(), tadabbur: viewTadabbur, personnages: () => viewPeople(), lignees: viewGenealogy, genealogie: viewGenealogy, 'lignees-liste': viewLineages, lexique: viewLex, favoris: viewFavs, reglages: viewSettings, methode: viewMethod, recherche: viewSearch }[h] || viewHome)();
   } catch (err) { console.error(err); v = { title: 'Erreur', html: `<p class="empty">${esc(String(err))}</p>` }; }
   if (CUR !== h) return;
   shell(v.title);
   M().innerHTML = v.html;
   window.scrollTo(0, y || 0);
   if (v.after) v.after();
+  if (typeof markPlaying === 'function') markPlaying();
 }
 
 function viewHome() {
   const all = []; DATA.tree.forEach(t => t.refs.forEach(r => all.push([r, t.id])));
   const day = Math.floor(Date.now() / 864e5); const [r, tid] = all[(day * 37) % all.length];
   const startQ = ['iblis-ange','terre-forme','isa-crucifie','fils-sacrifice','libre-arbitre','preuve-dieu'];
-  const tiles = [['lire','book',['Lire le Coran','اقرأ القرآن'],['114 sourates, coloration du tajwīd','١١٤ سورة مع ألوان التجويد']],['sujets','tree',['Sujets','الموضوعات'],[`${roots.length} branches, ${DATA.tree.length - roots.length} sujets`,'']],['questions','q',['Questions','أسئلة'],[`${DATA.qa.length} réponses raisonnées`,'']],['regles','rules',['Règles de lecture','أحكام التلاوة'],['Tajwīd, pauses, articulation','التجويد والوقف والمخارج']],['tadabbur','eye',['Tadabbur','التدبر'],['Méditer comme le texte le demande','']],['personnages','people',['Personnages','الشخصيات'],[`${DATA.people.length} et leurs relations`,'']],['lignees','lineage',['Lignées','السلالات'],['Qui descend de qui','']],['lexique','lex',['Lexique','المعجم'],[`${DATA.lex.length} racines`,'']],['nature','layers',['Natures des versets','أنواع الآيات'],['Exigences, preuves, récits…','']],['favoris','heart',['Favoris','المفضلة'],[`${FAVS.size} verset(s)`,'']]];
+  const tiles = [['lire','book',['Lire le Coran','اقرأ القرآن'],['114 sourates, coloration du tajwīd','١١٤ سورة مع ألوان التجويد']],['sujets','tree',['Sujets','الموضوعات'],[`${roots.length} branches, ${DATA.tree.length - roots.length} sujets`,'']],['questions','q',['Questions','أسئلة'],[`${DATA.qa.length} réponses raisonnées`,'']],['regles','rules',['Règles de lecture','أحكام التلاوة'],['Tajwīd, pauses, articulation','التجويد والوقف والمخارج']],['tadabbur','eye',['Tadabbur','التدبر'],['Méditer comme le texte le demande','']],['personnages','people',['Personnages','الشخصيات'],[`${DATA.people.length} et leurs relations`,'']],['lignees','lineage',['Arbre généalogique','شجرة الأنساب'],['Prophètes et personnages, liens vérifiés','']],['lexique','lex',['Lexique','المعجم'],[`${DATA.lex.length} racines`,'']],['nature','layers',['Natures des versets','أنواع الآيات'],['Exigences, preuves, récits…','']],['favoris','heart',['Favoris','المفضلة'],[`${FAVS.size} verset(s)`,'']]];
   const last = LAST && SURA[LAST[0]] ? `<a class="card row" href="#lire-${LAST[0]}-${LAST[1]}" style="text-decoration:none;color:var(--ink);margin-top:12px">${ico('book')}<span class="grow" style="flex:1"><span class="n">${esc(L(['Reprendre la lecture','متابعة القراءة']))}</span><br><b>${esc(SURA[LAST[0]][2])}</b> <span class="arsm">${esc(SURA[LAST[0]][1])}</span> · ${esc(L(['verset','الآية']))} ${LAST[1]}</span>${ico('chev', 'sm chev flip')}</a>` : '';
   return { title: LANG === 'ar' ? 'شجرة موضوعات القرآن' : 'Arbre des sujets du Coran', html: `
    <button class="searchbtn" data-go="recherche">${ico('search')}<span>${esc(L(['Rechercher un sujet, un verset, un mot…','ابحث عن موضوع أو آية أو لفظ…']))}</span></button>
@@ -284,7 +286,7 @@ function viewHome() {
 }
 
 function viewMore() {
-  const items = [['questions','q',['Questions logiques','أسئلة منطقية']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Lignées','السلالات']],['lexique','lex',['Lexique des racines','معجم الجذور']],['nature','layers',['Natures des versets','أنواع الآيات']],['favoris','heart',['Favoris et notes','المفضلة والتأملات']],['recherche','search',['Recherche','البحث']]];
+  const items = [['questions','q',['Questions logiques','أسئلة منطقية']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Arbre généalogique','شجرة الأنساب']],['lexique','lex',['Lexique des racines','معجم الجذور']],['nature','layers',['Natures des versets','أنواع الآيات']],['favoris','heart',['Favoris et notes','المفضلة والتأملات']],['recherche','search',['Recherche','البحث']]];
   const set = [['reglages','settings',['Réglages','الإعدادات']],['methode','info',['Méthode et sources','المنهج والمصادر']]];
   const li = a => `<div class="list">${a.map(([h, i, t]) => listRow(h, B(t), '', `<span class="badge" style="color:var(--gold)">${ico(i, 'sm')}</span>`)).join('')}</div>`;
   return { title: esc(L(['Plus','المزيد'])), html: li(items) + `<div style="height:14px"></div>` + li(set) };
@@ -313,9 +315,11 @@ async function viewSura(s, a) {
   const verses = idx.map(i => { const v = QURAN[i], k = v[0] + ':' + v[1]; const tops = VTOP[k] || [];
     return `<div class="verse" id="v-${v[1]}" data-k="${k}"><div class="vt">${verseHTML(v[2], { words: true })}<span class="an">﴿${toAr(v[1])}﴾</span></div>
      <div class="vmeta"><span class="row" style="gap:6px;flex-wrap:wrap"><span class="vnum">${s}:${v[1]}</span>${tops.slice(0, 2).map(t => `<a class="tlink" href="#t-${t}">${ico('tree', 'sm')}${esc(L([T[t].fr, T[t].ar]))}</a>`).join('')}${tops.length > 2 ? `<span class="n">+${tops.length - 2}</span>` : ''}</span>
-     <span class="vact"><button class="ib ${FAVS.has(k) ? 'on' : ''}" data-vfav="${k}" aria-label="Favori">${ico('star', 'sm')}</button><button class="ib" data-vmed="${k}" aria-label="Méditer">${ico('note', 'sm')}</button><button class="ib" data-vcopy="${k}" aria-label="Copier">${ico('copy', 'sm')}</button></span></div></div>`; }).join('');
+     <span class="vact"><button class="ib" data-play="${k}" aria-label="Écouter"><svg class="i sm" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg></button><button class="ib ${FAVS.has(k) ? 'on' : ''}" data-vfav="${k}" aria-label="Favori">${ico('star', 'sm')}</button><button class="ib" data-vmed="${k}" aria-label="Méditer">${ico('note', 'sm')}</button><button class="ib" data-vcopy="${k}" aria-label="Copier">${ico('copy', 'sm')}</button></span></div></div>`; }).join('');
   const html = `<div class="surahead"><div class="ar">${esc(sura[1])}</div><div><b>${esc(sura[2])}</b> · <span class="n">${sura[3] === 'meccan' ? esc(L(['Mecquoise','مكية'])) : esc(L(['Médinoise','مدنية']))} · ${sura[4]} ${esc(L(['versets','آية']))}</span></div></div>
    <div class="rtools">
+     <button class="btn pri" data-play="${s}:${a || 1}">▶ ${esc(L(['Écouter','استمع']))}</button>
+     <button class="btn" data-pa="rec">${esc(L([REC[AU.rec].fr, REC[AU.rec].ar]))}</button>
      <button class="btn" id="tjt" aria-pressed="${TJ}">${ico('palette', 'sm')}${esc(L(['Tajwīd','التجويد']))}</button>
      <button class="btn" id="fz-" aria-label="Réduire">${ico('minus', 'sm')}</button><button class="btn" id="fz+" aria-label="Agrandir">${ico('plus', 'sm')}</button>
      <button class="btn" id="gov">${ico('hash', 'sm')}${esc(L(['Verset','آية']))}</button>
@@ -338,6 +342,8 @@ async function viewSura(s, a) {
       if (c) { const k = c.dataset.vcopy; const txt = `${vtext(k)} (${SURA[+k.split(':')[0]][2]} ${k})`; try { navigator.clipboard.writeText(txt).then(() => toast(L(['Verset copié','نُسخت الآية'])), () => toast(L(['Copie impossible ici','تعذّر النسخ']))); } catch (e) { toast(L(['Copie impossible ici','تعذّر النسخ'])); } return; }
       if (w) { w.classList.add('sel'); wordSheet(w.dataset.w); }
     });
+    markPlaying();
+    if (!isHafs(AU.rec)) vs.insertAdjacentHTML('beforebegin', `<p class="n card" style="margin:6px 0">${esc(L([`Récitation en ${RIW[REC[AU.rec].riw].fr} : elle se joue par sourate entière. Le texte affiché suit Ḥafṣ ; certaines prononciations diffèrent.`, 'التلاوة برواية أخرى تُسمع سورة كاملة، والنص المعروض برواية حفص.']))}</p>`);
     if (a) { const el = document.getElementById('v-' + a); if (el) { el.classList.add('hi'); setTimeout(() => { const y = el.getBoundingClientRect().top + window.pageYOffset - 130; window.scrollTo(0, y); }, 30); } }
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver(es => { const vis = es.filter(e => e.isIntersecting).map(e => +e.target.id.slice(2)); if (vis.length && CUR.startsWith('lire-' + s)) { LAST = [s, Math.min(...vis)]; S.set('last', LAST); } }, { rootMargin: '-30% 0px -60% 0px' });
@@ -422,6 +428,7 @@ function viewPerson(id) {
   const p = P[id], rels = relationsOf(id);
   let h = `<div class="crumb">${B(CATS[p.cat])}</div><h2>${H2([p.fr, p.ar])}</h2>
    ${p.topic && T[p.topic] && id !== 'allah' ? `<a class="btn" href="#t-${p.topic}">${ico('tree', 'sm')}${esc(L([T[p.topic].fr, T[p.topic].ar]))}</a>` : ''}
+   ${GN[id] ? `<button class="btn" data-gfocusgo="${id}">${ico('lineage', 'sm')}${esc(L(["Voir dans l'arbre",'في شجرة الأنساب']))}</button>` : ''}
    <div class="sec">${B(['Relation avec Dieu','العلاقة مع الله'])}</div>${vcard({ ref: p.god[2], kw: p.god[3], note: LANG === 'ar' ? '' : p.god[0], sm: true })}${LANG !== 'fr' ? `<p class="arb">${esc(p.god[1])}</p>` : ''}`;
   const by = {}; rels.forEach(r => (by[r.kind] = by[r.kind] || []).push(r));
   ['famille','allie','adversaire','mission','origine'].forEach(k => { if (!by[k]) return;
@@ -433,7 +440,7 @@ function viewLineages() {
   let h = `<p class="lead">${esc(L(["Seuls les liens affirmés par le texte sont tracés ; chaque lien porte son verset.","لا تُرسم إلا الصلات التي يثبتها النص، مع آيتها."]))}</p>${vcard({ ref: li[0], kw: li[1], note: li[2], sm: true })}`;
   DATA.lineages.forEach(([fr, ar, st]) => { h += `<div class="sec">${B([fr, ar])}</div><div class="chain">`;
     st.forEach(s => { if (s[3]) h += `<div class="link">↓ ${esc(LANG === 'ar' ? s[2] : s[1])} · <a href="#${readHash(s[3])}"><b>${s[3]}</b></a>${qhtml(s[3], s[4], 'sm')}</div>`; h += `<a class="node" href="#p-${s[0]}"><span>${esc(L([P[s[0]].fr, P[s[0]].ar]))}</span>${ico('chev', 'sm chev flip')}</a>`; }); h += '</div>'; });
-  return { title: esc(L(['Lignées','السلالات'])), html: h };
+  return { title: esc(L(['Lignées (liste)','السلالات'])), html: `<a class="btn" href="#lignees" data-replace="1">${ico('lineage', 'sm')}${esc(L(['Voir l’arbre','عرض الشجرة']))}</a>` + h };
 }
 function viewLex() {
   return { title: esc(L(['Lexique des racines','معجم الجذور'])), html: `<p class="lead">${esc(L(["L'arabe bâtit ses mots sur des racines de trois lettres : la racine donne l'image d'origine.","تُبنى الكلمة العربية على جذر ثلاثي يعطي الصورة الأصلية."]))}</p>
@@ -454,13 +461,14 @@ function viewTadabbur() {
 }
 
 /* ── Règles de lecture */
-const RSECS = [['signes',['Signes du muṣḥaf','علامات المصحف']],['nun',['Nūn et tanwīn','النون والتنوين']],['mim',['Mīm sākina','الميم الساكنة']],['son',['Ghunna et qalqala','الغنّة والقلقلة']],['lam',["L'article al-","لام التعريف"]],['madd',['Prolongations (madd)','المدود']],['muet',['Lettres muettes','ما لا يُنطق']],['waqf',['Pauses (waqf)','الوقف']],['cas',['Cas particuliers','مواضع خاصة']],['makharij',['Articulation','المخارج والصفات']],['adab',['Avant de lire','آداب التلاوة']]];
+const RSECS = [['signes',['Signes du muṣḥaf','علامات المصحف']],['nun',['Nūn et tanwīn','النون والتنوين']],['mim',['Mīm sākina','الميم الساكنة']],['son',['Ghunna et qalqala','الغنّة والقلقلة']],['lam',["L'article al-","لام التعريف"]],['madd',['Prolongations (madd)','المدود']],['muet',['Lettres muettes','ما لا يُنطق']],['waqf',['Pauses (waqf)','الوقف']],['cas',['Cas particuliers','مواضع خاصة']],['makharij',['Articulation','المخارج والصفات']],['adab',['Avant de lire','آداب التلاوة']],['qiraat',['Lectures et audio','القراءات والاستماع']]];
+function playBtn(ref) { return `<button class="btn" data-play="${rng(ref)[0]}" data-single="1" style="padding:6px 12px;min-height:34px">▶ ${esc(L(['Écouter','استمع']))}</button>`; }
 function ruleCard(r) {
   return `<div class="card rule" style="--rc:var(--tj-${r.color || 'izhar'});margin-bottom:12px">
    <h3>${r.color ? `<span class="tj-${r.color}"><span class="dot"></span></span> ` : ''}${esc(L([r.fr, r.ar]))}${LANG === 'both' ? ` <span class="arsm">${esc(r.ar)}</span>` : ''}</h3>
    ${LANG !== 'ar' ? `<p style="margin:4px 0">${esc(r.dfr)}</p>` : ''}${LANG !== 'fr' ? `<p class="arb" style="margin:4px 0;color:var(--ink)">${esc(r.dar)}</p>` : ''}
    <div class="meta"><span>⏱ ${esc(L([r.hfr, r.har]))}</span><span><b>${r.count.toLocaleString('fr-FR')}</b> ${esc(L(['fois dans le Coran','موضعًا في القرآن']))}</span></div>
-   ${r.ex.map(([ref, snip, s, e]) => `<div class="ex"><a class="ref" href="#${readHash(ref)}"><b>${ref}</b> · <span class="arsm">${esc(SURA[+ref.split(':')[0]][1])}</span></a><div class="qtext">${exampleHTML(snip, s, e, r.color)}</div></div>`).join('')}
+   ${r.ex.map(([ref, snip, s, e]) => `<div class="ex"><div class="row" style="justify-content:space-between"><a class="ref" href="#${readHash(ref)}"><b>${ref}</b> · <span class="arsm">${esc(SURA[+ref.split(':')[0]][1])}</span></a>${playBtn(ref)}</div><div class="qtext">${exampleHTML(snip, s, e, r.color)}</div></div>`).join('')}
   </div>`;
 }
 function viewRules(sec) {
@@ -477,9 +485,10 @@ function viewRules(sec) {
   const title = RSECS.find(x => x[0] === sec) || RSECS[0];
   h = chips + `<h2 style="margin-top:8px">${H2(title[1])}</h2><p class="lead">${esc(L(DATA.tj.secdesc[sec] || ['','']))}</p>`;
   if (sec === 'signes') h += `<div class="signs">${tj.signs.map(([g, fr, ar]) => `<div class="sign"><div class="g">${esc(g)}</div><b style="font-size:.9rem">${esc(L([fr, ar]))}</b>${LANG === 'both' ? `<span class="arsm">${esc(ar)}</span>` : ''}</div>`).join('')}</div>`;
-  else if (sec === 'waqf') h += tj.waqf.map(w => `<div class="card" style="margin-bottom:12px"><div class="row"><span class="badge" style="font-family:var(--f-q);font-size:1.4rem;min-width:52px;height:46px">${esc(w.label)}</span><span style="flex:1"><b>${esc(L([w.fr, w.ar]))}</b>${LANG === 'both' ? ` <span class="arsm">${esc(w.ar)}</span>` : ''}<br><span class="n">${esc(w.dfr)} · ${w.count.toLocaleString('fr-FR')} ${esc(L(['fois','مرة']))}</span></span></div>${w.ex.map(([ref, snip, s, e]) => `<div class="ex"><a class="ref" href="#${readHash(ref)}"><b>${ref}</b></a><div class="qtext">${exampleHTML(snip, s, e, 'madd4')}</div></div>`).join('')}</div>`).join('') + `<div class="card"><b>${esc(L(["Comment s'arrêter","كيفية الوقف"]))}</b><ul style="margin:6px 0 0;padding-inline-start:20px">${tj.stoprules.map(x => `<li>${esc(L(x))}</li>`).join('')}</ul></div>`;
-  else if (sec === 'cas') h += tj.special.map(r => `<div class="card" style="margin-bottom:12px"><h3>${esc(L([r.fr, r.ar]))}${LANG === 'both' ? ` <span class="arsm">${esc(r.ar)}</span>` : ''}</h3><p style="margin:4px 0">${esc(L([r.dfr, r.dar]))}</p><div class="meta n">${r.count} ${esc(L(['occurrence(s)','موضع']))}${r.refs.length <= 20 ? ' : ' + r.refs.map(x => `<a href="#${readHash(x)}">${x}</a>`).join(', ') : ''}</div>${r.ex.map(([ref, snip, s, e]) => `<div class="ex"><a class="ref" href="#${readHash(ref)}"><b>${ref}</b></a><div class="qtext">${exampleHTML(snip, s, e, 'madd4')}</div></div>`).join('')}</div>`).join('');
+  else if (sec === 'waqf') h += tj.waqf.map(w => `<div class="card" style="margin-bottom:12px"><div class="row"><span class="badge" style="font-family:var(--f-q);font-size:1.4rem;min-width:52px;height:46px">${esc(w.label)}</span><span style="flex:1"><b>${esc(L([w.fr, w.ar]))}</b>${LANG === 'both' ? ` <span class="arsm">${esc(w.ar)}</span>` : ''}<br><span class="n">${esc(w.dfr)} · ${w.count.toLocaleString('fr-FR')} ${esc(L(['fois','مرة']))}</span></span></div>${w.ex.map(([ref, snip, s, e]) => `<div class="ex"><div class="row" style="justify-content:space-between"><a class="ref" href="#${readHash(ref)}"><b>${ref}</b></a>${playBtn(ref)}</div><div class="qtext">${exampleHTML(snip, s, e, 'madd4')}</div></div>`).join('')}</div>`).join('') + `<div class="card"><b>${esc(L(["Comment s'arrêter","كيفية الوقف"]))}</b><ul style="margin:6px 0 0;padding-inline-start:20px">${tj.stoprules.map(x => `<li>${esc(L(x))}</li>`).join('')}</ul></div>`;
+  else if (sec === 'cas') h += tj.special.map(r => `<div class="card" style="margin-bottom:12px"><h3>${esc(L([r.fr, r.ar]))}${LANG === 'both' ? ` <span class="arsm">${esc(r.ar)}</span>` : ''}</h3><p style="margin:4px 0">${esc(L([r.dfr, r.dar]))}</p><div class="meta n">${r.count} ${esc(L(['occurrence(s)','موضع']))}${r.refs.length <= 20 ? ' : ' + r.refs.map(x => `<a href="#${readHash(x)}">${x}</a>`).join(', ') : ''}</div>${r.ex.map(([ref, snip, s, e]) => `<div class="ex"><div class="row" style="justify-content:space-between"><a class="ref" href="#${readHash(ref)}"><b>${ref}</b></a>${playBtn(ref)}</div><div class="qtext">${exampleHTML(snip, s, e, 'madd4')}</div></div>`).join('')}</div>`).join('');
   else if (sec === 'makharij') h += `<div class="stack">${tj.makharij.map(m => `<div class="card"><div class="row" style="justify-content:space-between"><b>${esc(L([m[0], m[1]]))}</b><span style="font-family:var(--f-q);font-size:1.4rem;color:var(--gold);direction:rtl">${esc(m[4])}</span></div><p style="margin:4px 0" class="${LANG === 'ar' ? 'arb' : ''}">${esc(L([m[2], m[3]]))}</p></div>`).join('')}<div class="card"><b>${esc(L(['Lettres emphatiques','حروف التفخيم']))}</b><p style="margin:4px 0">${esc(L(tj.tafkhim))}</p></div></div>`;
+  else if (sec === 'qiraat') h += qiraatHTML();
   else if (sec === 'adab') h += `<div class="stack">${tj.adab.map(a => vcard({ ref: a[0], kw: a[1], note: a[2], sm: true })).join('')}</div>`;
   else h += tj.rules.filter(r => r.group === sec).map(ruleCard).join('');
   const i = RSECS.findIndex(x => x[0] === sec);
@@ -533,6 +542,7 @@ function viewSettings() {
    <div class="card"><b>${esc(L(['Thème','المظهر']))}</b><div style="margin-top:8px">${seg('s-theme', [['auto', esc(L(['Auto','تلقائي']))],['light', esc(L(['Clair','فاتح']))],['dark', esc(L(['Sombre','داكن']))]], THEME)}</div></div>
    <div class="card"><b>${esc(L(['Taille du texte arabe','حجم النص العربي']))}</b><div style="margin-top:8px">${seg('s-size', AR_SIZES.map((_, i) => [i, ['S','M','L','XL','XXL'][i]]), ARSIZE)}</div><div class="qtext" style="margin-top:6px">${verseHTML('ٱلۡحَمۡدُ لِلَّهِ رَبِّ ٱلۡعَٰلَمِينَ')}</div></div>
    <div class="card"><b>${esc(L(['Coloration du tajwīd dans le lecteur','ألوان التجويد في القارئ']))}</b><div style="margin-top:8px">${seg('s-tj', [['true', esc(L(['Activée','مفعّلة']))],['false', esc(L(['Désactivée','معطّلة']))]], TJ)}</div></div>
+   <div class="card"><b>${esc(L(['Récitation audio','التلاوة الصوتية']))}</b><p class="n" style="margin:4px 0 8px">${esc(recName(AU.rec))}</p><button class="btn" data-pa="rec">${esc(L(['Changer de récitant ou de lecture','تغيير القارئ أو الرواية']))}</button></div>
    <div class="card"><b>${esc(L(['Mes données','بياناتي']))}</b><p class="n" style="margin:4px 0 8px">${FAVS.size} ${esc(L(['favori(s)','مفضلة']))} · ${Object.values(NOTES).filter(v => v && v.trim()).length} ${esc(L(['réflexion(s)','تأمل']))}. ${esc(L(["Elles restent uniquement sur cet appareil.","تبقى على هذا الجهاز فقط."]))}</p><button class="btn" id="s-reset">${esc(L(['Tout effacer','مسح الكل']))}</button></div>
   </div>`, after() {
     const bind = (id, fn) => document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => fn(b.dataset.v));
@@ -551,6 +561,8 @@ function viewMethod() {
    <h3>Contenu</h3><p>${roots.length} branches, ${DATA.tree.length - roots.length} sujets, ${nR} passages classés, ${DATA.qa.length} questions, ${DATA.people.length} personnages, ${DATA.lex.length} racines, ${DATA.tj.rules.length} règles de lecture.</p>
    <h3>Six natures</h3><table>${ORDER.map(k => `<tr><td class="t-${k}"><b>${TYPES[k][0]}</b></td><td>${TDESC[k][0]}</td></tr>`).join('')}</table>
    <h3>Règles de lecture</h3><p>Les règles de tajwīd sont celles de la lecture de Ḥafṣ ʿan ʿĀṣim. Elles ne viennent pas du sens du texte mais de la tradition de récitation, que le muṣḥaf note par ses signes. Les exemples et les comptes sont détectés automatiquement à partir de ces signes ; la coloration est une aide et ne remplace pas l'écoute d'un récitateur.</p>
+   <h3>Audio</h3><p>Les récitations sont diffusées depuis leurs sources : everyayah.com (Ḥafṣ, verset par verset) et mp3quran.net (autres lectures, par sourate). Elles appartiennent à leurs récitants et producteurs ; aucun fichier audio n'est inclus dans l'application. L'écoute demande une connexion, et la page claude.ai bloque les sons externes.</p>
+   <h3>Généalogie</h3><p>${esc(DATA.gen.note[0])}</p>
    <h3>Contrôle</h3><p>Chaque référence est vérifiée automatiquement : le mot-clé surligné doit se trouver dans le verset cité.</p>
    <h3>Limites</h3><p>L'arbre est une sélection organisée, pas un index complet. Les lectures sont des propositions à discuter, pas des avis religieux.</p><p class="n">Version ${esc(DATA.version)}</p></div>`;
   const ar = `<div class="prose arb" style="color:var(--ink)"><p>المصدر الوحيد هو النص العربي للقرآن برسم المصحف (رواية حفص). أحكام التلاوة مأخوذة من رواية حفص عن عاصم كما تدل عليها علامات المصحف، والأمثلة مستخرجة آليًّا. هذه قراءات للنقاش لا فتاوى.</p></div>`;
@@ -579,6 +591,7 @@ document.addEventListener('click', async e => {
     out.innerHTML = `<div class="panel"><div class="n">« ${esc(w)} » : ${hits.length} ${esc(L(['verset(s) dans tout le Coran.','آية في القرآن كله.']))}</div>` + (others.length ? others.slice(0, 10).map(i => { const v = QURAN[i]; return `<a class="hit" href="#lire-${v[0]}-${v[1]}" style="padding-inline:0"><span class="ref"><b>${v[0]}:${v[1]}</b> · <span class="arsm">${esc(SURA[v[0]][1])}</span></span><div class="qtext sm">${hl(v[2], w)}</div></a>`; }).join('') : `<p class="n">${esc(L(['Expression unique dans le texte.','تعبير فريد في النص.']))}</p>`) + `</div>`;
   }
 });
+document.addEventListener('click', e => { const g = e.target.closest('[data-gfocusgo]'); if (g) { GFOCUS = g.dataset.gfocusgo; go('lignees'); } });
 document.addEventListener('input', e => { const t = e.target; if (t.dataset && t.dataset.note) { NOTES[t.dataset.note] = t.value; S.set('notes', NOTES); } });
 
 /* ───────────────────────── Thème, langue, démarrage */
@@ -592,7 +605,7 @@ function applyTheme() {
 }
 function setLang(l) { LANG = l; S.set('lang', l); document.documentElement.lang = l === 'ar' ? 'ar' : 'fr'; document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr'; }
 function start() {
-  setLang(LANG); applyTheme(); setAr(ARSIZE);
+  setLang(LANG); applyTheme(); setAr(ARSIZE); initAudio();
   document.getElementById('bk').onclick = () => back();
   document.getElementById('sr').onclick = () => go('recherche');
   document.getElementById('scrim').onclick = closeSheet;
@@ -612,4 +625,3 @@ function start() {
   try { history.replaceState({ h }, '', '#' + h); } catch (e) {}
   render(h);
 }
-start();
