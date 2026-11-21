@@ -1,0 +1,82 @@
+name: Application Android
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Dépendances
+        run: npm ci
+
+      - name: Contrôle des références
+        run: python3 scripts/verify_all.py
+
+      - name: Construction de la page web
+        run: python3 scripts/build.py
+
+      - name: Copie dans le projet Android
+        run: npx cap sync android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Compilation de l'APK
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: 1.0.${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Préparation des fichiers
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/release/app-release.apk out/Tadabbur.apk
+          cp web/standalone/coran-tadabbur.html out/coran-tadabbur.html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tadabbur-${{ github.run_number }}
+          path: out/
+
+      - name: Publication (release)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Tadabbur 1.0.${{ github.run_number }}
+          make_latest: true
+          body: |
+            Application Android (APK) et page web hors ligne, construites depuis ${{ github.sha }}.
+
+            Installation sur Android : télécharger `Tadabbur.apk`, l'ouvrir et autoriser l'installation depuis cette source.
+            Chaque nouvelle version s'installe par-dessus la précédente (favoris et notes conservés).
+          files: |
+            out/Tadabbur.apk
+            out/coran-tadabbur.html

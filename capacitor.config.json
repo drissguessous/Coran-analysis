@@ -1,0 +1,23 @@
+{
+  "appId": "com.drissguessous.tadabbur",
+  "appName": "Tadabbur",
+  "webDir": "web/dist",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto",
+    "backgroundColor": "#f3f4ee",
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "launchAutoHide": true,
+      "backgroundColor": "#1e4f7a",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "LIGHT",
+      "backgroundColor": "#f3f4ee"
+    }
+  }
+}

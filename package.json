@@ -1,0 +1,24 @@
+{
+  "name": "coran-analysis",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Arbre des sujets du Coran : lecture littérale, tadabbur et règles de lecture (web + Android)",
+  "scripts": {
+    "build": "python3 scripts/build.py",
+    "verify": "python3 scripts/verify_all.py",
+    "android:sync": "npm run build && npx cap sync android",
+    "android:open": "npx cap open android"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@capacitor/cli": "^7.6.10",
+    "quran-json": "^3.1.2"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/splash-screen": "^7.0.5",
+    "@capacitor/status-bar": "^7.0.6"
+  }
+}
