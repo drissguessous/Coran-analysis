@@ -138,6 +138,15 @@ def genealogy():
                 edges=[dict(**{'from': e[0]}, to=e[1], type=e[2], fr=e[3], ar=e[4], ref=e[5], kw=e[6]) for e in GEN.EDGES])
 
 
+def sura_weights():
+    """Part de chaque sourate dans la longueur du texte (sert à estimer la taille des téléchargements)."""
+    L = {}
+    for (s, a), t in VERSES:
+        L[s] = L.get(s, 0) + len(N[(s, a)])
+    tot = sum(L.values())
+    return [round(L[s] / tot, 6) for s in range(1, 115)]
+
+
 def collect_refs():
     refs = []
     for t in TREE:
@@ -174,7 +183,9 @@ def main():
         tj=tajwid(),
         gen=genealogy(),
         audio=dict(intro=list(AUD.QIRAAT_INTRO),
-                   reciters=[dict(id=r[0], riw=r[1], fr=r[2], ar=r[3], style=r[4], dir=r[5], learn=r[6], note=r[7]) for r in AUD.RECITERS],
+                   reciters=[dict(id=r[0], riw=r[1], fr=r[2], ar=r[3], style=r[4], dir=r[5], learn=r[6], note=r[7],
+                                  kbps=int(re.search(r'(\d+)kbps', r[5]).group(1)) if 'kbps' in r[5] else 128) for r in AUD.RECITERS],
+                   weights=sura_weights(), hours=dict(murattal=24, muallim=44, mujawwad=40),
                    riwayat=[dict(id=w[0], fr=w[1], ar=w[2], city=w[3], dfr=w[4], dar=w[5], traits=w[6]) for w in AUD.RIWAYAT]),
         verses={f'{s}:{a}': V[(s, a)] for s, a in sorted(cited)},
         suras=[[c['id'], c['name'], c['transliteration'], c['type'], c['total_verses']] for c in D],
@@ -184,7 +195,7 @@ def main():
     icon = 'data:image/png;base64,' + base64.b64encode(open(os.path.join(src, 'icon.png'), 'rb').read()).decode()
     font = 'data:font/woff2;base64,' + base64.b64encode(open(os.path.join(src, 'amiri-quran-arabic-400-normal.woff2'), 'rb').read()).decode()
     css = open(os.path.join(src, 'app.css')).read().replace('/*QFONT*/', font)
-    app = '\n'.join(open(os.path.join(src, f)).read() for f in ('app.js', 'audio.js', 'genealogy.js')) + '\nstart();\n'
+    app = '\n'.join(open(os.path.join(src, f)).read() for f in ('app.js', 'audio.js', 'offline.js', 'genealogy.js')) + '\nstart();\n'
     shell = open(os.path.join(src, 'index.html')).read()
     page = shell.replace('/*ICON*/', icon).replace('/*CSS*/', css).replace('/*DATA*/null', js).replace('/*JS*/', app)
     full = [[c['id'], v['id'], v['text']] for c in D for v in c['verses']]

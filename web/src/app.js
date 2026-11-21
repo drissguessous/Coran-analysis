@@ -236,7 +236,7 @@ window.addEventListener('hashchange', () => { let h = ''; try { h = decodeURICom
 
 /* ───────────────────────── Coquille */
 const NAVITEMS = [['accueil','home',['Accueil','الرئيسية']],['lire','book',['Lire','اقرأ']],['sujets','tree',['Sujets','الموضوعات']],['regles','rules',['Règles','التجويد']],['plus','more',['Plus','المزيد']]];
-const RAIL = [...NAVITEMS.slice(0, 4), null, ['questions','q',['Questions','أسئلة']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Généalogie','الأنساب']],['lexique','lex',['Lexique','المعجم']],['nature','layers',['Natures','الأنواع']],['favoris','heart',['Favoris','المفضلة']], null, ['reglages','settings',['Réglages','الإعدادات']],['methode','info',['Méthode','المنهج']]];
+const RAIL = [...NAVITEMS.slice(0, 4), null, ['questions','q',['Questions','أسئلة']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Généalogie','الأنساب']],['lexique','lex',['Lexique','المعجم']],['nature','layers',['Natures','الأنواع']],['favoris','heart',['Favoris','المفضلة']],['horsligne','book',['Hors ligne','دون اتصال']], null, ['reglages','settings',['Réglages','الإعدادات']],['methode','info',['Méthode','المنهج']]];
 function shell(title) {
   document.getElementById('ttl').innerHTML = title;
   const canBack = STACK.length > 1 || !TABS.includes(CUR);
@@ -258,7 +258,7 @@ async function render(h, y = 0) {
     else if (h.startsWith('lire-')) { const [, s, a] = h.split('-'); v = await viewSura(+s, a ? +a : 0); }
     else if (h.startsWith('regles-')) v = viewRules(h.slice(7));
     else if (h.startsWith('nature')) v = viewNature((h.split('-')[1] || 'E').toUpperCase());
-    else v = ({ accueil: viewHome, lire: viewReadIndex, sujets: viewTopics, regles: () => viewRules(''), plus: viewMore, questions: () => viewQuestions(), tadabbur: viewTadabbur, personnages: () => viewPeople(), lignees: viewGenealogy, genealogie: viewGenealogy, 'lignees-liste': viewLineages, lexique: viewLex, favoris: viewFavs, reglages: viewSettings, methode: viewMethod, recherche: viewSearch }[h] || viewHome)();
+    else v = ({ accueil: viewHome, lire: viewReadIndex, sujets: viewTopics, regles: () => viewRules(''), plus: viewMore, questions: () => viewQuestions(), tadabbur: viewTadabbur, horsligne: viewOffline, personnages: () => viewPeople(), lignees: viewGenealogy, genealogie: viewGenealogy, 'lignees-liste': viewLineages, lexique: viewLex, favoris: viewFavs, reglages: viewSettings, methode: viewMethod, recherche: viewSearch }[h] || viewHome)();
   } catch (err) { console.error(err); v = { title: 'Erreur', html: `<p class="empty">${esc(String(err))}</p>` }; }
   if (CUR !== h) return;
   shell(v.title);
@@ -286,7 +286,7 @@ function viewHome() {
 }
 
 function viewMore() {
-  const items = [['questions','q',['Questions logiques','أسئلة منطقية']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Arbre généalogique','شجرة الأنساب']],['lexique','lex',['Lexique des racines','معجم الجذور']],['nature','layers',['Natures des versets','أنواع الآيات']],['favoris','heart',['Favoris et notes','المفضلة والتأملات']],['recherche','search',['Recherche','البحث']]];
+  const items = [['questions','q',['Questions logiques','أسئلة منطقية']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Arbre généalogique','شجرة الأنساب']],['lexique','lex',['Lexique des racines','معجم الجذور']],['nature','layers',['Natures des versets','أنواع الآيات']],['favoris','heart',['Favoris et notes','المفضلة والتأملات']],['horsligne','book',['Écoute hors ligne','الاستماع دون اتصال']],['recherche','search',['Recherche','البحث']]];
   const set = [['reglages','settings',['Réglages','الإعدادات']],['methode','info',['Méthode et sources','المنهج والمصادر']]];
   const li = a => `<div class="list">${a.map(([h, i, t]) => listRow(h, B(t), '', `<span class="badge" style="color:var(--gold)">${ico(i, 'sm')}</span>`)).join('')}</div>`;
   return { title: esc(L(['Plus','المزيد'])), html: li(items) + `<div style="height:14px"></div>` + li(set) };
@@ -320,6 +320,7 @@ async function viewSura(s, a) {
    <div class="rtools">
      <button class="btn pri" data-play="${s}:${a || 1}">▶ ${esc(L(['Écouter','استمع']))}</button>
      <button class="btn" data-pa="rec">${esc(L([REC[AU.rec].fr, REC[AU.rec].ar]))}</button>
+     ${NATIVE ? (isDone(AU.rec, s) ? `<a class="btn" href="#horsligne">✓ ${esc(L(['Hors ligne','دون اتصال']))}</a>` : `<button class="btn" data-dl="${AU.rec}|${s}">↓ ${esc(L(['Télécharger','تحميل']))}</button>`) : ''}
      <button class="btn" id="tjt" aria-pressed="${TJ}">${ico('palette', 'sm')}${esc(L(['Tajwīd','التجويد']))}</button>
      <button class="btn" id="fz-" aria-label="Réduire">${ico('minus', 'sm')}</button><button class="btn" id="fz+" aria-label="Agrandir">${ico('plus', 'sm')}</button>
      <button class="btn" id="gov">${ico('hash', 'sm')}${esc(L(['Verset','آية']))}</button>
@@ -542,7 +543,7 @@ function viewSettings() {
    <div class="card"><b>${esc(L(['Thème','المظهر']))}</b><div style="margin-top:8px">${seg('s-theme', [['auto', esc(L(['Auto','تلقائي']))],['light', esc(L(['Clair','فاتح']))],['dark', esc(L(['Sombre','داكن']))]], THEME)}</div></div>
    <div class="card"><b>${esc(L(['Taille du texte arabe','حجم النص العربي']))}</b><div style="margin-top:8px">${seg('s-size', AR_SIZES.map((_, i) => [i, ['S','M','L','XL','XXL'][i]]), ARSIZE)}</div><div class="qtext" style="margin-top:6px">${verseHTML('ٱلۡحَمۡدُ لِلَّهِ رَبِّ ٱلۡعَٰلَمِينَ')}</div></div>
    <div class="card"><b>${esc(L(['Coloration du tajwīd dans le lecteur','ألوان التجويد في القارئ']))}</b><div style="margin-top:8px">${seg('s-tj', [['true', esc(L(['Activée','مفعّلة']))],['false', esc(L(['Désactivée','معطّلة']))]], TJ)}</div></div>
-   <div class="card"><b>${esc(L(['Récitation audio','التلاوة الصوتية']))}</b><p class="n" style="margin:4px 0 8px">${esc(recName(AU.rec))}</p><button class="btn" data-pa="rec">${esc(L(['Changer de récitant ou de lecture','تغيير القارئ أو الرواية']))}</button></div>
+   <div class="card"><b>${esc(L(['Récitation audio','التلاوة الصوتية']))}</b><p class="n" style="margin:4px 0 8px">${esc(recName(AU.rec))}</p><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" data-pa="rec">${esc(L(['Changer de récitant ou de lecture','تغيير القارئ أو الرواية']))}</button><a class="btn" href="#horsligne">${esc(L(['Écoute hors ligne','الاستماع دون اتصال']))}</a></div></div>
    <div class="card"><b>${esc(L(['Mes données','بياناتي']))}</b><p class="n" style="margin:4px 0 8px">${FAVS.size} ${esc(L(['favori(s)','مفضلة']))} · ${Object.values(NOTES).filter(v => v && v.trim()).length} ${esc(L(['réflexion(s)','تأمل']))}. ${esc(L(["Elles restent uniquement sur cet appareil.","تبقى على هذا الجهاز فقط."]))}</p><button class="btn" id="s-reset">${esc(L(['Tout effacer','مسح الكل']))}</button></div>
   </div>`, after() {
     const bind = (id, fn) => document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => fn(b.dataset.v));
@@ -605,7 +606,7 @@ function applyTheme() {
 }
 function setLang(l) { LANG = l; S.set('lang', l); document.documentElement.lang = l === 'ar' ? 'ar' : 'fr'; document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr'; }
 function start() {
-  setLang(LANG); applyTheme(); setAr(ARSIZE); initAudio();
+  setLang(LANG); applyTheme(); setAr(ARSIZE); initAudio(); initOffline();
   document.getElementById('bk').onclick = () => back();
   document.getElementById('sr').onclick = () => go('recherche');
   document.getElementById('scrim').onclick = closeSheet;

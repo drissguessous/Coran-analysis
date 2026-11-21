@@ -12,6 +12,10 @@ const audioEl = () => document.getElementById('au');
 const isHafs = id => REC[id] && REC[id].riw === 'hafs';
 const pad3 = n => String(n).padStart(3, '0');
 function srcFor(rec, s, a) {
+  /* Fichier présent sur le téléphone (application Android) en priorité, sinon la source en ligne */
+  return (typeof localFor === 'function' && localFor(rec, s, a)) || srcRemote(rec, s, a);
+}
+function srcRemote(rec, s, a) {
   const r = REC[rec];
   return r.riw === 'hafs' ? `https://everyayah.com/data/${r.dir}/${pad3(s)}${pad3(a)}.mp3` : `${r.dir}${pad3(s)}.mp3`;
 }
@@ -37,6 +41,7 @@ function playSura(s) {
 function audioFail(e) {
   if (e && e.name === 'AbortError') return;
   AU.on = false; showPlayer();
+  if (NATIVE) { toast(L(["Cette sourate n'est pas sur le téléphone et la connexion manque. Téléchargez-la dans « Écoute hors ligne ».", 'هذه السورة غير محمّلة ولا يوجد اتصال.'])); return; }
   toast(L(["Lecture impossible : vérifiez la connexion. La page claude.ai bloque les sons externes ; utilisez l'application ou le fichier HTML.", 'تعذّر التشغيل: تحقق من الاتصال.']));
 }
 function stopAudio() { clearTimeout(AU.waiting); AU.waiting = null; const el = audioEl(); el.pause(); el.removeAttribute('src'); try { el.load(); } catch (e) {} AU.on = false; AU.s = 0; showPlayer(); markPlaying(); }

@@ -216,6 +216,12 @@ ol.logic li{margin:4px 0}
 .pl-ctl::-webkit-scrollbar{display:none}
 .pl-play{width:48px;height:48px;border-radius:50%;border:0;background:var(--lapis);color:var(--lapis-ink);display:grid;place-items:center;flex:none}
 .pl-play svg{stroke:currentColor}
+.dlbar{height:8px;border-radius:4px;background:var(--soft);overflow:hidden;margin-top:8px}
+.dlbar span{display:block;height:100%;background:var(--lapis);transition:width .3s}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px}
+.sgrid button{height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-variant-numeric:tabular-nums;font-size:.85rem;color:var(--muted)}
+.sgrid button.on{background:var(--lapis);border-color:var(--lapis);color:var(--lapis-ink);font-weight:700}
+.list>button[disabled]{opacity:.6}
 .pl-wait{font-size:.85rem;color:var(--gold);font-weight:600;padding:2px 0}
 body.has-player main{padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom) + 160px)}
 body.has-player .toast{bottom:calc(var(--bar-h) + env(safe-area-inset-bottom) + 150px)}
