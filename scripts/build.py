@@ -20,6 +20,7 @@ from data_tadabbur import METHOD, OBSTACLE, CALLS, APPLY, TQ, TQ_ROOT  # noqa: E
 import data_tajwid as TJ                          # noqa: E402
 import data_genealogy as GEN                      # noqa: E402
 import data_audio as AUD                          # noqa: E402
+import dictionary as DICT                         # noqa: E402
 
 VERSES = sorted(V.items())
 
@@ -195,7 +196,7 @@ def main():
     icon = 'data:image/png;base64,' + base64.b64encode(open(os.path.join(src, 'icon.png'), 'rb').read()).decode()
     font = 'data:font/woff2;base64,' + base64.b64encode(open(os.path.join(src, 'amiri-quran-arabic-400-normal.woff2'), 'rb').read()).decode()
     css = open(os.path.join(src, 'app.css')).read().replace('/*QFONT*/', font)
-    app = '\n'.join(open(os.path.join(src, f)).read() for f in ('app.js', 'audio.js', 'offline.js', 'genealogy.js')) + '\nstart();\n'
+    app = '\n'.join(open(os.path.join(src, f)).read() for f in ('app.js', 'audio.js', 'offline.js', 'genealogy.js', 'dict.js')) + '\nstart();\n'
     shell = open(os.path.join(src, 'index.html')).read()
     page = shell.replace('/*ICON*/', icon).replace('/*CSS*/', css).replace('/*DATA*/null', js).replace('/*JS*/', app)
     full = [[c['id'], v['id'], v['text']] for c in D for v in c['verses']]
@@ -204,11 +205,16 @@ def main():
     os.makedirs(dist, exist_ok=True)
     open(os.path.join(dist, 'index.html'), 'w').write(page.replace('<!--QFULL-->', ''))
     open(os.path.join(dist, 'quran.json'), 'w').write(fulljs)
+    dct, dst = DICT.build()
+    assert dst['aligned'] == dst['words'] and not dst['unused_fw'], dst
+    dictjs = json.dumps(dct, ensure_ascii=False, separators=(',', ':'))
+    open(os.path.join(dist, 'dict.json'), 'w').write(dictjs)
     sa = os.path.join(ROOT, 'web', 'standalone')
     os.makedirs(sa, exist_ok=True)
-    open(os.path.join(sa, 'coran-tadabbur.html'), 'w').write(page.replace('<!--QFULL-->', '<script>window.QFULL=' + fulljs + ';</script>'))
+    open(os.path.join(sa, 'coran-tadabbur.html'), 'w').write(page.replace('<!--QFULL-->', '<script>window.QFULL=' + fulljs + ';window.QDICT=' + dictjs.replace('</', '<\\/') + ';</script>'))
     n = sum(len(t['refs']) for t in TREE)
     print(f"{len(TREE)} nœuds, {n} passages, {len(cited)} versets cités, {len(data['tj']['rules'])} règles de lecture")
+    print(f"dictionnaire : {dst['roots']} racines, {dst['lemmas']} lemmes, {dst['fw']} mots-outils et noms, {dst['words']} mots rattachés")
     print(f"index.html {os.path.getsize(os.path.join(dist, 'index.html')) // 1024} Ko · standalone {os.path.getsize(os.path.join(sa, 'coran-tadabbur.html')) // 1024} Ko")
 
 

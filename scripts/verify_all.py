@@ -7,4 +7,9 @@ for cmd in (['verify.py', 'data_tree4'], ['verify_p.py'], ['verify2.py']):
     print(r.stdout.strip().splitlines()[-1] if r.stdout.strip() else r.stderr)
     if r.returncode or ' bad' in r.stdout and not r.stdout.strip().endswith('0') and '0 bad' not in r.stdout.splitlines()[-1]:
         ok = False
+sys.path.insert(0, D)
+import dictionary  # noqa: E402
+_, st = dictionary.build()
+print(f"dictionnaire : {st['aligned']}/{st['words']} mots rattachés, {st['roots']} racines définies, mots-outils non définis : {len(st['unused_fw'])}")
+ok = ok and st['aligned'] == st['words'] and not st['unused_fw']
 sys.exit(0 if ok else 1)

@@ -233,3 +233,14 @@ body.has-player .toast{bottom:calc(var(--bar-h) + env(safe-area-inset-bottom) + 
 .genlegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;margin-top:10px;color:var(--muted)}
 .genlegend span{display:inline-flex;gap:6px;align-items:center}
 @media (min-width:900px){.gen{height:70vh}}
+/* Dictionnaire */
+.droot{font-family:var(--f-q);font-size:1.45rem;letter-spacing:.12em;color:var(--gold)}
+.droot.big{font-size:2.4rem;text-align:center}
+.dhead{text-align:center}
+.dw{font-family:var(--f-q);font-size:1.7rem;line-height:1.5}
+.dform{font-family:var(--f-q);font-size:1.15rem}
+.dletters{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;margin:0 0 12px;direction:rtl}
+.dletters button{font-family:var(--f-q);font-size:1.25rem;padding:6px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);cursor:pointer}
+.dletters button[aria-pressed="true"]{background:var(--gold);color:#fff;border-color:var(--gold)}
+.dvl{margin-top:8px}
+.dvl mark{background:var(--mark);color:inherit;border-radius:4px}

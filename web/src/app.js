@@ -40,6 +40,7 @@ const IC = {
  palette:'<path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.6 0-1.2-1-1.4-1-2.4 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4-4-7.5-9-7.5z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
  minus:'<path d="M5 12h14"/>', plus:'<path d="M12 5v14M5 12h14"/>',
  hash:'<path d="M5 9h14M5 15h14M10 4L8 20M16 4l-2 16"/>',
+ dict:'<path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z"/><path d="M21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"/>',
  prev:'<path d="M15 5l-7 7 7 7"/>', next:'<path d="M9 5l7 7-7 7"/>',
 };
 const ico = (n, c = '') => `<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || ''}</svg>`;
@@ -117,13 +118,13 @@ function verseHTML(text, { tj = TJ, words = false } = {}) {
   const { ch, cls } = tj ? tjClasses(text) : { ch: [...text], cls: null };
   let out = '', i = 0, w = 0;
   while (i < ch.length) {
-    if (ch[i] === ' ') { out += ' '; i++; continue; }
+    if (ch[i] === ' ') { out += ' '; i++; w++; continue; }
     let j = i; while (j < ch.length && ch[j] !== ' ') j++;
     const word = ch.slice(i, j).join('');
     const isSign = /^[ۖ-ۭ۞۩]+$/.test(word);
     const inner = runsHTML(ch, cls, i, j);
-    out += words && !isSign ? `<span class="w" data-w="${esc(word)}">${inner}</span>` : inner;
-    i = j; w++;
+    out += words && !isSign ? `<span class="w" data-w="${esc(word)}" data-i="${w}">${inner}</span>` : inner;
+    i = j;
   }
   return out;
 }
@@ -236,7 +237,7 @@ window.addEventListener('hashchange', () => { let h = ''; try { h = decodeURICom
 
 /* ───────────────────────── Coquille */
 const NAVITEMS = [['accueil','home',['Accueil','الرئيسية']],['lire','book',['Lire','اقرأ']],['sujets','tree',['Sujets','الموضوعات']],['regles','rules',['Règles','التجويد']],['plus','more',['Plus','المزيد']]];
-const RAIL = [...NAVITEMS.slice(0, 4), null, ['questions','q',['Questions','أسئلة']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Généalogie','الأنساب']],['lexique','lex',['Lexique','المعجم']],['nature','layers',['Natures','الأنواع']],['favoris','heart',['Favoris','المفضلة']],['horsligne','book',['Hors ligne','دون اتصال']], null, ['reglages','settings',['Réglages','الإعدادات']],['methode','info',['Méthode','المنهج']]];
+const RAIL = [...NAVITEMS.slice(0, 4), null, ['questions','q',['Questions','أسئلة']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Généalogie','الأنساب']],['lexique','lex',['Lexique','المعجم']],['dictionnaire','dict',['Dictionnaire','القاموس']],['nature','layers',['Natures','الأنواع']],['favoris','heart',['Favoris','المفضلة']],['horsligne','book',['Hors ligne','دون اتصال']], null, ['reglages','settings',['Réglages','الإعدادات']],['methode','info',['Méthode','المنهج']]];
 function shell(title) {
   document.getElementById('ttl').innerHTML = title;
   const canBack = STACK.length > 1 || !TABS.includes(CUR);
@@ -256,6 +257,9 @@ async function render(h, y = 0) {
     else if (h.startsWith('p-') && P[h.slice(2)]) v = viewPerson(h.slice(2));
     else if (h.startsWith('q-') && QA[h.slice(2)]) v = viewQuestions(h.slice(2));
     else if (h.startsWith('lire-')) { const [, s, a] = h.split('-'); v = await viewSura(+s, a ? +a : 0); }
+    else if (/^dict-\d+$/.test(h)) v = await viewDictRoot(+h.slice(5));
+    else if (/^dictf-\d+$/.test(h)) v = await viewDictFw(+h.slice(6));
+    else if (h === 'dictionnaire') v = await viewDict();
     else if (h.startsWith('regles-')) v = viewRules(h.slice(7));
     else if (h.startsWith('nature')) v = viewNature((h.split('-')[1] || 'E').toUpperCase());
     else v = ({ accueil: viewHome, lire: viewReadIndex, sujets: viewTopics, regles: () => viewRules(''), plus: viewMore, questions: () => viewQuestions(), tadabbur: viewTadabbur, horsligne: viewOffline, personnages: () => viewPeople(), lignees: viewGenealogy, genealogie: viewGenealogy, 'lignees-liste': viewLineages, lexique: viewLex, favoris: viewFavs, reglages: viewSettings, methode: viewMethod, recherche: viewSearch }[h] || viewHome)();
@@ -272,7 +276,7 @@ function viewHome() {
   const all = []; DATA.tree.forEach(t => t.refs.forEach(r => all.push([r, t.id])));
   const day = Math.floor(Date.now() / 864e5); const [r, tid] = all[(day * 37) % all.length];
   const startQ = ['iblis-ange','terre-forme','isa-crucifie','fils-sacrifice','libre-arbitre','preuve-dieu'];
-  const tiles = [['lire','book',['Lire le Coran','اقرأ القرآن'],['114 sourates, coloration du tajwīd','١١٤ سورة مع ألوان التجويد']],['sujets','tree',['Sujets','الموضوعات'],[`${roots.length} branches, ${DATA.tree.length - roots.length} sujets`,'']],['questions','q',['Questions','أسئلة'],[`${DATA.qa.length} réponses raisonnées`,'']],['regles','rules',['Règles de lecture','أحكام التلاوة'],['Tajwīd, pauses, articulation','التجويد والوقف والمخارج']],['tadabbur','eye',['Tadabbur','التدبر'],['Méditer comme le texte le demande','']],['personnages','people',['Personnages','الشخصيات'],[`${DATA.people.length} et leurs relations`,'']],['lignees','lineage',['Arbre généalogique','شجرة الأنساب'],['Prophètes et personnages, liens vérifiés','']],['lexique','lex',['Lexique','المعجم'],[`${DATA.lex.length} racines`,'']],['nature','layers',['Natures des versets','أنواع الآيات'],['Exigences, preuves, récits…','']],['favoris','heart',['Favoris','المفضلة'],[`${FAVS.size} verset(s)`,'']]];
+  const tiles = [['lire','book',['Lire le Coran','اقرأ القرآن'],['114 sourates, coloration du tajwīd','١١٤ سورة مع ألوان التجويد']],['sujets','tree',['Sujets','الموضوعات'],[`${roots.length} branches, ${DATA.tree.length - roots.length} sujets`,'']],['questions','q',['Questions','أسئلة'],[`${DATA.qa.length} réponses raisonnées`,'']],['regles','rules',['Règles de lecture','أحكام التلاوة'],['Tajwīd, pauses, articulation','التجويد والوقف والمخارج']],['tadabbur','eye',['Tadabbur','التدبر'],['Méditer comme le texte le demande','']],['personnages','people',['Personnages','الشخصيات'],[`${DATA.people.length} et leurs relations`,'']],['lignees','lineage',['Arbre généalogique','شجرة الأنساب'],['Prophètes et personnages, liens vérifiés','']],['dictionnaire','dict',['Dictionnaire','القاموس'],['Tous les mots, par racine','كل الألفاظ مرتبة بجذورها']],['lexique','lex',['Lexique','المعجم'],[`${DATA.lex.length} racines`,'']],['nature','layers',['Natures des versets','أنواع الآيات'],['Exigences, preuves, récits…','']],['favoris','heart',['Favoris','المفضلة'],[`${FAVS.size} verset(s)`,'']]];
   const last = LAST && SURA[LAST[0]] ? `<a class="card row" href="#lire-${LAST[0]}-${LAST[1]}" style="text-decoration:none;color:var(--ink);margin-top:12px">${ico('book')}<span class="grow" style="flex:1"><span class="n">${esc(L(['Reprendre la lecture','متابعة القراءة']))}</span><br><b>${esc(SURA[LAST[0]][2])}</b> <span class="arsm">${esc(SURA[LAST[0]][1])}</span> · ${esc(L(['verset','الآية']))} ${LAST[1]}</span>${ico('chev', 'sm chev flip')}</a>` : '';
   return { title: LANG === 'ar' ? 'شجرة موضوعات القرآن' : 'Arbre des sujets du Coran', html: `
    <button class="searchbtn" data-go="recherche">${ico('search')}<span>${esc(L(['Rechercher un sujet, un verset, un mot…','ابحث عن موضوع أو آية أو لفظ…']))}</span></button>
@@ -286,7 +290,7 @@ function viewHome() {
 }
 
 function viewMore() {
-  const items = [['questions','q',['Questions logiques','أسئلة منطقية']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Arbre généalogique','شجرة الأنساب']],['lexique','lex',['Lexique des racines','معجم الجذور']],['nature','layers',['Natures des versets','أنواع الآيات']],['favoris','heart',['Favoris et notes','المفضلة والتأملات']],['horsligne','book',['Écoute hors ligne','الاستماع دون اتصال']],['recherche','search',['Recherche','البحث']]];
+  const items = [['questions','q',['Questions logiques','أسئلة منطقية']],['tadabbur','eye',['Tadabbur','التدبر']],['personnages','people',['Personnages','الشخصيات']],['lignees','lineage',['Arbre généalogique','شجرة الأنساب']],['dictionnaire','dict',['Dictionnaire des mots','قاموس ألفاظ القرآن']],['lexique','lex',['Lexique des racines','معجم الجذور']],['nature','layers',['Natures des versets','أنواع الآيات']],['favoris','heart',['Favoris et notes','المفضلة والتأملات']],['horsligne','book',['Écoute hors ligne','الاستماع دون اتصال']],['recherche','search',['Recherche','البحث']]];
   const set = [['reglages','settings',['Réglages','الإعدادات']],['methode','info',['Méthode et sources','المنهج والمصادر']]];
   const li = a => `<div class="list">${a.map(([h, i, t]) => listRow(h, B(t), '', `<span class="badge" style="color:var(--gold)">${ico(i, 'sm')}</span>`)).join('')}</div>`;
   return { title: esc(L(['Plus','المزيد'])), html: li(items) + `<div style="height:14px"></div>` + li(set) };
@@ -341,7 +345,7 @@ async function viewSura(s, a) {
       if (f) { const k = f.dataset.vfav; const on = !FAVS.has(k); setFav(k, on); f.classList.toggle('on', on); return; }
       if (m) { const k = m.dataset.vmed; openSheet(`${esc(L(['Méditer','تدبّر']))} · ${k}`, `<div class="qtext sm">${esc(vtext(k))}</div>${(VTOP[k] || []).map(t => `<a class="tlink" href="#t-${t}" style="margin:2px">${esc(L([T[t].fr, T[t].ar]))}</a>`).join('')}${reflectHTML(k, null)}`); return; }
       if (c) { const k = c.dataset.vcopy; const txt = `${vtext(k)} (${SURA[+k.split(':')[0]][2]} ${k})`; try { navigator.clipboard.writeText(txt).then(() => toast(L(['Verset copié','نُسخت الآية'])), () => toast(L(['Copie impossible ici','تعذّر النسخ']))); } catch (e) { toast(L(['Copie impossible ici','تعذّر النسخ'])); } return; }
-      if (w) { w.classList.add('sel'); wordSheet(w.dataset.w); }
+      if (w) { w.classList.add('sel'); wordSheet(w.dataset.w, w.closest('.verse').dataset.k, +w.dataset.i); }
     });
     markPlaying();
     if (!isHafs(AU.rec)) vs.insertAdjacentHTML('beforebegin', `<p class="n card" style="margin:6px 0">${esc(L([`Récitation en ${RIW[REC[AU.rec].riw].fr} : elle se joue par sourate entière. Le texte affiché suit Ḥafṣ ; certaines prononciations diffèrent.`, 'التلاوة برواية أخرى تُسمع سورة كاملة، والنص المعروض برواية حفص.']))}</p>`);
@@ -353,13 +357,14 @@ async function viewSura(s, a) {
   } };
 }
 function setAr(i) { ARSIZE = Math.max(0, Math.min(AR_SIZES.length - 1, i)); S.set('arsize', ARSIZE); document.documentElement.style.setProperty('--ar-size', AR_SIZES[ARSIZE]); }
-async function wordSheet(word) {
+async function wordSheet(word, vk, tok) {
   await loadQ();
+  const dh = vk ? await wordDictHTML(vk, tok) : '';
   const k = norm(word);
   const exact = [], contain = [];
   QN.forEach((v, i) => { if (!v.includes(k)) return; const toks = v.split(' '); if (toks.includes(norm(word))) exact.push(i); else contain.push(i); });
   const all = exact.concat(contain);
-  openSheet(`<span style="font-family:var(--f-q);font-size:1.5rem">${esc(word)}</span>`, `<p class="n">${esc(L([`Forme exacte : ${exact.length} verset(s) · contenant « ${k} » : ${all.length}`, `الصيغة نفسها: ${exact.length} · ما يحتوي «${k}»: ${all.length}`]))}</p>
+  openSheet(`<span style="font-family:var(--f-q);font-size:1.5rem">${esc(word)}</span>`, `${dh}<p class="n">${esc(L([`Forme exacte : ${exact.length} verset(s) · contenant « ${k} » : ${all.length}`, `الصيغة نفسها: ${exact.length} · ما يحتوي «${k}»: ${all.length}`]))}</p>
    <div class="list">${all.slice(0, 60).map(i => { const v = QURAN[i]; return `<a class="hit" href="#lire-${v[0]}-${v[1]}"><span class="ref"><b>${v[0]}:${v[1]}</b> · <span class="arsm">${esc(SURA[v[0]][1])}</span></span><div class="qtext">${hl(v[2], k)}</div></a>`; }).join('')}</div>${all.length > 60 ? `<p class="n">${esc(L(['60 premiers affichés. Affinez avec la recherche.','عرض أول ٦٠.']))}</p>` : ''}`);
 }
 
@@ -523,9 +528,9 @@ function viewSearch() {
       h += sec(B(['Lexique','المعجم']), DATA.lex.filter(l => m(l[0], l[1], l[3], l[4])).map(l => listRow('lexique', `${esc(l[1])} <span class="arsm">${esc(l[0])}</span>`, esc(L([l[3], l[4]])))));
       h += sec(B(['Règles de lecture','أحكام التلاوة']), DATA.tj.rules.filter(r => m(r.fr, r.ar, r.dfr)).map(r => listRow('regles-' + r.group, esc(L([r.fr, r.ar])), '')));
       h += sec(B(['Sourates','السور']), DATA.suras.filter(s => m(s[1], s[2]) || String(s[0]) === raw).map(s => listRow('lire-' + s[0], `${s[0]}. ${esc(s[2])}`, `<span class="arsm">${esc(s[1])}</span>`)));
-      if (!isAr) { const notes = []; DATA.tree.forEach(t => t.refs.forEach(r => { if (fold(r[2]).includes(q)) notes.push(`<a class="hit" href="#t-${t.id}"><span class="ref"><b>${r[0]}</b> · ${esc(L([t.fr, t.ar]))}</span><div>${esc(r[2])}</div></a>`); }));
+      if (!isAr) { h += await dictSearchHTML(raw); const notes = []; DATA.tree.forEach(t => t.refs.forEach(r => { if (fold(r[2]).includes(q)) notes.push(`<a class="hit" href="#t-${t.id}"><span class="ref"><b>${r[0]}</b> · ${esc(L([t.fr, t.ar]))}</span><div>${esc(r[2])}</div></a>`); }));
         h += notes.length ? `<div class="sec">${B(['Dans les explications','في الشروح'])} <span class="n">${notes.length}</span></div><div class="list">${notes.slice(0, 25).join('')}</div>` : ''; }
-      else { await loadQ(); const k = norm(raw); const hits = []; QN.forEach((v, i) => { if (v.includes(k)) hits.push(i); });
+      else { h += await dictSearchHTML(raw); await loadQ(); const k = norm(raw); const hits = []; QN.forEach((v, i) => { if (v.includes(k)) hits.push(i); });
         h += hits.length ? `<div class="sec">${B(['Versets','الآيات'])} <span class="n">${hits.length}</span></div><div class="list">${hits.slice(0, 80).map(i => { const v = QURAN[i]; return `<a class="hit" href="#lire-${v[0]}-${v[1]}"><span class="ref"><b>${v[0]}:${v[1]}</b> · <span class="arsm">${esc(SURA[v[0]][1])}</span></span><div class="qtext">${hl(v[2], raw)}</div></a>`; }).join('')}</div>` : ''; }
       if (SQ !== inp.value) return;
       out.innerHTML = h || `<p class="empty">${esc(L(['Aucun résultat.','لا نتائج.']))}</p>`;
@@ -562,11 +567,12 @@ function viewMethod() {
    <h3>Contenu</h3><p>${roots.length} branches, ${DATA.tree.length - roots.length} sujets, ${nR} passages classés, ${DATA.qa.length} questions, ${DATA.people.length} personnages, ${DATA.lex.length} racines, ${DATA.tj.rules.length} règles de lecture.</p>
    <h3>Six natures</h3><table>${ORDER.map(k => `<tr><td class="t-${k}"><b>${TYPES[k][0]}</b></td><td>${TDESC[k][0]}</td></tr>`).join('')}</table>
    <h3>Règles de lecture</h3><p>Les règles de tajwīd sont celles de la lecture de Ḥafṣ ʿan ʿĀṣim. Elles ne viennent pas du sens du texte mais de la tradition de récitation, que le muṣḥaf note par ses signes. Les exemples et les comptes sont détectés automatiquement à partir de ces signes ; la coloration est une aide et ne remplace pas l'écoute d'un récitateur.</p>
-   <h3>Audio</h3><p>Les récitations sont diffusées depuis leurs sources : everyayah.com (Ḥafṣ, verset par verset) et mp3quran.net (autres lectures, par sourate). Elles appartiennent à leurs récitants et producteurs ; aucun fichier audio n'est inclus dans l'application. L'écoute demande une connexion, et la page claude.ai bloque les sons externes.</p>
+   <h3>Audio</h3><p>Les récitations sont diffusées depuis leurs sources : everyayah.com (Ḥafṣ, verset par verset) et mp3quran.net (autres lectures, par sourate). Elles appartiennent à leurs récitants et producteurs ; aucun fichier audio n'est inclus dans l'application. L'écoute demande une connexion, sauf pour les sourates téléchargées dans l'application Android ; la page claude.ai bloque les sons externes.</p>
+   <h3>Dictionnaire</h3><p>Chaque mot est rattaché à sa racine et à son mot de base d'après la morphologie du Quranic Arabic Corpus (v0.4, © Kais Dukes, université de Leeds, licence GNU GPL), dans la version corrigée de mustafa0x/quran-morphology. Le sens de chacune des ${DICT ? DICT.stats.roots : '1 651'} racines et de chaque mot-outil est rédigé pour ce projet à partir de l'arabe, sans tafsīr.</p>
    <h3>Généalogie</h3><p>${esc(DATA.gen.note[0])}</p>
    <h3>Contrôle</h3><p>Chaque référence est vérifiée automatiquement : le mot-clé surligné doit se trouver dans le verset cité.</p>
    <h3>Limites</h3><p>L'arbre est une sélection organisée, pas un index complet. Les lectures sont des propositions à discuter, pas des avis religieux.</p><p class="n">Version ${esc(DATA.version)}</p></div>`;
-  const ar = `<div class="prose arb" style="color:var(--ink)"><p>المصدر الوحيد هو النص العربي للقرآن برسم المصحف (رواية حفص). أحكام التلاوة مأخوذة من رواية حفص عن عاصم كما تدل عليها علامات المصحف، والأمثلة مستخرجة آليًّا. هذه قراءات للنقاش لا فتاوى.</p></div>`;
+  const ar = `<div class="prose arb" style="color:var(--ink)"><p>المصدر الوحيد هو النص العربي للقرآن برسم المصحف (رواية حفص). أحكام التلاوة مأخوذة من رواية حفص عن عاصم كما تدل عليها علامات المصحف، والأمثلة مستخرجة آليًّا. ورُدّت كل كلمة في القاموس إلى جذرها بحسب الصرف في مدوّنة القرآن العربية (Quranic Arabic Corpus، رخصة GPL)، وشُرحت معاني الجذور والأدوات من العربية دون تفسير. هذه قراءات للنقاش لا فتاوى.</p></div>`;
   return { title: esc(L(['Méthode et sources','المنهج والمصادر'])), html: LANG === 'fr' ? fr : LANG === 'ar' ? ar : fr + ar };
 }
 
